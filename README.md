@@ -1,133 +1,132 @@
-# EEG-Benchmark-Tool
-EEG Benchmark Tool: An open-source Python script for automated EEG signal quality assessment. Calculates SNR, CMRR proxy, and Alpha Power Ratio using MNE-Python, based on principles from "Analyzing Neural Time Series Data" by Mike X Cohen. Useful for comparing EEG electrodes and validating signal processing pipelines.
-
 # EEG Benchmark Tool
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-**An open-source Python script for automated EEG signal quality assessment.**
+**An open-source Python script for automated EEG signal quality assessment, focusing on key performance metrics.**
 
-This tool provides a standardized and transparent method for evaluating the quality of EEG signals. It calculates key metrics using the MNE-Python library, following established neurophysiological signal processing principles outlined in resources like "Analyzing Neural Time Series Data: Theory and Practice" by Mike X Cohen. This benchmark is useful for researchers, developers, and anyone working with EEG data who needs to assess and compare the signal quality from different EEG acquisition setups, electrodes, or processing methods.
+This tool provides a standardized and transparent method for evaluating the quality of EEG signals, crucial for comparing different electrode types, acquisition systems, or processing pipelines. It calculates fundamental quality metrics using the MNE-Python library, adhering to established signal processing principles (inspired by resources like "Analyzing Neural Time Series Data: Theory and Practice" by Mike X Cohen).
+
+The primary goal is to offer researchers and developers a reliable way to quantify EEG signal integrity through objective measurements.
 
 ## Key Features
 
-*   **Automated EEG Quality Assessment:** Calculates essential EEG signal quality metrics automatically.
-*   **Key Metrics:**
-    *   **Signal-to-Noise Ratio (SNR):** Evaluates the ratio of signal power (e.g., alpha band) to noise power in surrounding frequency bands.
-    *   **CMRR Proxy (Line Noise Power):** Provides an indirect measure of Common Mode Rejection Ratio by assessing power specifically at line noise frequencies (e.g., 50/60 Hz).
-    *   **Alpha Power Ratio:** Calculates the ratio of alpha band power in "eyes closed" vs. "eyes open" conditions (or proxies thereof), indicating the quality of alpha rhythm modulation detection.
-*   **MNE-Python Powered:** Leverages the robust and well-validated MNE-Python library for EEG data processing and analysis.
-*   **Based on Established Principles:** Metric calculations align with standard signal processing methodologies.
-*   **Open-Source and Transparent:** The script is fully open-source, allowing for inspection, modification, and community contributions.
-*   **Jupyter Notebook Format:** Easy to run and explore, with clear step-by-step code and explanations.
-*   **Example Dataset for Demonstration:** Uses the MNE sample dataset (`sample_audvis_raw.fif`) for out-of-the-box testing and demonstration of the calculation process. **Designed for easy adaptation to your own EEG data.**
-*   **Comparison Plotting:** Generates a visual comparison of metrics for different signal conditions (e.g., original vs. noisy demo).
+*   **Automated EEG Quality Assessment:** Calculates essential metrics automatically.
+*   **Focus on Core Quality Metrics:**
+    *   **Signal-to-Noise Ratio (SNR):** Quantifies signal clarity against background noise.
+    *   **CMRR Proxy (Line Noise Power):** Assesses robustness against power line interference.
+    *   **Alpha Power Ratio:** Measures the ability to detect physiological alpha rhythm modulation.
+*   **MNE-Python Powered:** Utilizes the robust MNE-Python library.
+*   **Based on Established Principles:** Calculation methods align with standard practices.
+*   **Open-Source (GPLv3):** Transparent, modifiable, and encourages community contributions.
+*   **Jupyter Notebook Format:** Interactive and easy to execute step-by-step.
+*   **Demonstration Included:** Uses the MNE sample dataset for immediate testing and understanding.
+*   **Designed for Your Data:** Easily adaptable to analyze your own EEG recordings.
+*   **Visual Comparison:** Plots metrics for different conditions (e.g., original vs. noisy demo).
+
+## Understanding the Metrics
+
+This benchmark focuses on three fundamental indicators of EEG signal quality:
+
+1.  **Signal-to-Noise Ratio (SNR) (dB):**
+    *   **What it is:** Measures the power of the desired brain signal relative to the power of background noise within specific frequency bands.
+    *   **Calculation:** Calculated as `10 * log10(Power in Signal Band / Average Power in Noise Bands)`. The signal band is typically set to a physiologically relevant range (e.g., Alpha: 8-13 Hz), while noise bands are often adjacent ranges assumed to contain primarily noise (e.g., Theta: 4-7 Hz, Beta: 14-30 Hz).
+    *   **Why it's important:** A high SNR indicates that the brain activity of interest is clearly distinguishable from noise, which is essential for reliable analysis (e.g., detecting events, analyzing frequency content, building BCIs). A low SNR means the signal is obscured by noise.
+    *   **Interpretation:** **Higher dB values are better.** A significant drop in SNR suggests increased noise contamination.
+
+2.  **CMRR Proxy (Line Noise Power) (uV²/Hz):**
+    *   **What it is:** An indirect assessment of the system's ability to reject common-mode interference, specifically focusing on ubiquitous power line noise (50 Hz or 60 Hz). It measures the noise *before* targeted filtering (like a notch filter) is applied.
+    *   **Calculation:** Calculated as the average Power Spectral Density (PSD) within a narrow frequency band centered around the line noise frequency (e.g., 59.5-60.5 Hz for 60Hz noise), computed on data that has been band-pass filtered but *not* notch filtered.
+    *   **Why it's important:** Line noise is a major artifact. A low power value in this band *before* notch filtering suggests the electrode setup and amplifier inherently possess good Common Mode Rejection Ratio (CMRR), minimizing this interference at the source. High power indicates susceptibility to environmental noise.
+    *   **Interpretation:** **Lower values are better.** This metric reflects the "raw" contamination level before specific line noise removal.
+
+3.  **Alpha Power Ratio (Unitless):**
+    *   **What it is:** Compares the EEG power in the alpha frequency band (typically 8-13 Hz) between a baseline/resting state (commonly "eyes closed") and an active/attentive state (commonly "eyes open").
+    *   **Calculation:** Calculated as `(Average Alpha Band Power during "Eyes Closed" condition) / (Average Alpha Band Power during "Eyes Open" condition)`. Power is derived from the PSD calculated over epochs corresponding to each condition.
+    *   **Why it's important:** Detects the "alpha blocking" phenomenon – a fundamental aspect of brain activity where alpha oscillations are typically stronger during relaxed wakefulness with eyes closed and suppressed during visual input or mental effort. A system that reliably captures this modulation (ratio > 1) demonstrates good sensitivity to underlying physiological changes.
+    *   **Interpretation:** **Values significantly greater than 1 are generally better,** indicating successful detection of alpha modulation. Noise or poor electrode contact can obscure the alpha rhythm, pushing the ratio closer to 1 or even below it. *(Note: In the sample data demonstration, time segments are used as proxies for eyes open/closed states, limiting the physiological interpretation for that specific run).*
 
 ## Demonstration Output
 
-The notebook includes a step to add artificial noise to the sample data and recalculate metrics, demonstrating the tool's sensitivity. Here's an example comparison plot generated by the notebook:
+The notebook demonstrates the metric sensitivity by comparing the results from the original sample data to a version with added artificial noise:
 
 ![EEG Benchmark Comparison Plot](https://github.com/zavesone/EEG-Benchmark-Tool/raw/main/output.png)
-*(Note: Log scale is used for the Y-axis in this example due to the large difference in Line Noise Power values between the original and noisy signals).*
+*(Example plot showing how metrics change with added noise. Note the log scale for Line Noise Power).*
 
 ## Usage
+
+This benchmark tool is provided as a Jupyter Notebook (`.ipynb`) file.
 
 **Prerequisites:**
 
 *   **Python 3.x**
-*   **Required Python Libraries:** Install these using pip:
+*   **Jupyter Environment:** Jupyter Notebook or JupyterLab. Install via pip if needed:
+    ```bash
+    pip install jupyterlab notebook
+    ```
+*   **Required Python Libraries:**
     ```bash
     pip install mne numpy matplotlib scipy
     ```
 
-**Running the Notebook (Demonstration):**
+**Running the Benchmark (Demonstration with Sample Data):**
 
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/zavesone/EEG-Benchmark-Tool.git
     cd EEG-Benchmark-Tool
     ```
-2.  **Start Jupyter Notebook or JupyterLab:**
+2.  **Launch Jupyter:**
     ```bash
-    jupyter notebook  # or jupyter lab
+    jupyter lab  # or jupyter notebook
     ```
-3.  **Open the `EEG_Signal_Quality_Benchmark.ipynb` notebook.**
-4.  **Run the notebook cells sequentially.** The notebook will automatically download and use the MNE sample dataset to demonstrate the metric calculations.
-5.  **Explore the Results:** After execution using the sample data, observe the printed metrics and the comparison plot to understand how the script works.
+3.  **Open the Notebook:** In the Jupyter interface, open `EEG_Signal_Quality_Benchmark.ipynb`.
+4.  **Execute the Cells:** Run the cells sequentially (e.g., using `Shift + Enter`). The MNE sample data will be downloaded automatically if needed.
+5.  **View Results:** Observe the printed metric values and the comparison plot.
 
 **Configuration:**
 
-The script's behavior is controlled by the `config` dictionary defined near the beginning of the notebook. You can modify parameters within this dictionary to customize the analysis:
+Modify the `config` dictionary within the notebook cell near the beginning to customize the analysis:
 
-*   `channels_to_analyze`: **Crucial:** Update this list with the actual channel names present in *your* EEG data when analyzing your own files.
-*   `filter_bp_low`, `filter_bp_high`: Band-pass filter frequencies.
-*   `line_noise_freq`: Adjust this to your local line noise frequency (e.g., 50 Hz or 60 Hz).
-*   `snr_signal_band`, `snr_noise_bands`: Frequency bands for SNR calculation.
-*   `alpha_band`: Frequency band for Alpha Power Ratio calculation.
-*   `alpha_test_conditions`: **Important:** Modify this section to accurately reflect how "eyes closed" and "eyes open" (or other relevant conditions) are marked or timed in *your* dataset (e.g., using event IDs or specific time ranges). The sample notebook uses time segments as a proxy.
-*   `noise_level_factor`: Level of artificial noise added for the demonstration comparison (only affects the "Noisy" calculation).
-*   ... and more. Refer to the comments within the notebook for details on each parameter.
+*   `channels_to_analyze`: **Crucial:** Update with channel names from *your* data.
+*   `filter_bp_low`, `filter_bp_high`: Band-pass filter settings.
+*   `line_noise_freq`: Set to 50 or 60 Hz.
+*   `snr_signal_band`, `snr_noise_bands`: Bands for SNR calculation.
+*   `alpha_band`: Band for Alpha Power Ratio.
+*   `alpha_test_conditions`: **Important:** Adapt to match how conditions (e.g., eyes closed/open) are defined in *your* data (event markers or time ranges).
+*   ... and others (see comments in the notebook).
 
 ## Using Your Own Data
 
-This tool is intended for analyzing your experimental EEG data. To do this, you need to adapt the data loading and potentially the configuration sections of the Jupyter notebook:
+Adapt the notebook to analyze your EEG recordings:
 
 1.  **Modify Data Loading:**
-    *   Locate the cell that loads the MNE sample data (using `mne.io.read_raw_fif` and `sample.data_path()`).
-    *   Comment out or delete the sample data loading lines.
-    *   Add code using the appropriate MNE function to load *your* EEG file format (e.g., `mne.io.read_raw_edf`, `mne.io.read_raw_bdf`, `mne.io.read_raw_brainvision`, etc.).
-    *   Ensure the `preload=True` argument is used for easier processing.
-    *   **Example (for an EDF file):**
+    *   In the notebook, find the cell loading the sample data (`mne.io.read_raw_fif`...).
+    *   Comment out or delete those lines.
+    *   Add code to load *your* file using the appropriate `mne.io.read_raw_*` function (e.g., `read_raw_edf`, `read_raw_bdf`). Use `preload=True`.
+    *   **Example (EDF):**
         ```python
-        # Comment out or remove sample data loading lines
-
-        # Add code to load your data:
-        your_eeg_filepath = 'path/to/your/data.edf' # <-- IMPORTANT: SET YOUR FILE PATH HERE
-        try:
-            raw_orig = mne.io.read_raw_edf(your_eeg_filepath, preload=True)
-            print(f"Successfully loaded your data from: {your_eeg_filepath}")
-        except FileNotFoundError:
-            print(f"Error: File not found at {your_eeg_filepath}. Please check the path.")
-            # Optionally raise an error or exit
-        except Exception as e:
-            print(f"An error occurred loading {your_eeg_filepath}: {e}")
-            # Optionally raise an error or exit
-
-        # Continue with channel selection and preprocessing...
+        # your_eeg_filepath = 'path/to/your/data.edf' # <-- SET YOUR FILE PATH
+        # raw_orig = mne.io.read_raw_edf(your_eeg_filepath, preload=True)
         ```
 
 2.  **Update Configuration (`config` dictionary):**
-    *   **`channels_to_analyze`:** List the exact names of the EEG channels you want to analyze from *your* file.
-    *   **`line_noise_freq`:** Set to 50 or 60 Hz based on your recording location.
-    *   **`alpha_test_conditions`:** If you are performing the alpha ratio test, update this section to match your experimental protocol.
-        *   If using **event markers**: Find the event IDs in your data corresponding to "eyes closed" and "eyes open" starts and update the configuration (you'll also need to modify the Alpha Ratio calculation cell slightly to use `mne.find_events` and create epochs based on these event IDs instead of `make_fixed_length_events`).
-        *   If using **time segments**: Update the `tmin` and `tmax` values in the `config['alpha_test_conditions']` structure to reflect the actual start and end times of your conditions in seconds.
-    *   **Verify other parameters:** Ensure `filter_bp_low`, `filter_bp_high`, `psd_n_fft`, `sfreq` (if not automatically detected), etc., are appropriate for your specific data and analysis goals.
+    *   Set `channels_to_analyze` to match your channel names.
+    *   Adjust `line_noise_freq`.
+    *   Correctly define `alpha_test_conditions` based on your experimental protocol (using event markers or precise time segments). If using events, you'll need to modify the alpha calculation cell to use `mne.find_events`.
+    *   Verify all other parameters (`sfreq` if needed, filter settings, PSD parameters).
 
-3.  **Run the Adapted Notebook:** Execute the cells sequentially. The script will now process your data and calculate the quality metrics. The "Noisy" signal calculation part can be skipped or commented out if you only want to analyze your original data.
-
-## Output Interpretation
-
-The notebook calculates and displays three key metrics:
-
-*   **Average SNR (dB):** Signal-to-Noise Ratio in decibels. Higher values indicate better signal quality relative to the defined noise bands.
-*   **Average Line Noise Power Proxy (uV^2/Hz):** An estimate of power specifically around the line noise frequency, calculated *before* notch filtering. Lower values are better, indicating less line noise contamination or better intrinsic common-mode rejection.
-*   **Average Alpha Power Ratio (Closed/Open Proxy):** Ratio of alpha band power during the "eyes closed" condition/proxy versus the "eyes open" condition/proxy. Values significantly greater than 1 suggest a typical alpha blocking response was detected.
+3.  **Run the Adapted Notebook:** Execute the cells. Skip or remove the noise addition section if desired.
 
 ## Contributing
 
-Contributions to improve this tool are welcome! If you have suggestions for new features (e.g., additional metrics, support for more data formats), bug fixes, or code improvements, please feel free to:
-
-1.  **Fork the repository.**
-2.  **Create a new branch** for your feature or fix (`git checkout -b feature/AmazingFeature`).
-3.  **Make your changes** and commit them (`git commit -m 'Add some AmazingFeature'`).
-4.  **Push to the branch** (`git push origin feature/AmazingFeature`).
-5.  **Open a Pull Request** to the main repository.
+Contributions are welcome! Please feel free to fork the repository, create a feature branch, and submit a pull request for improvements or bug fixes.
 
 ## License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+This project is licensed under the **GNU General Public License v3.0** (or later). This means you are free to run, study, share, and modify the software. If you distribute modified versions, you must also distribute them under the GPLv3 (or later) license.
+
+**Please ensure you include the `LICENSE` file** (containing the full GPLv3 text) in your repository when distributing this code. The full text can be found at: [https://www.gnu.org/licenses/gpl-3.0.txt](https://www.gnu.org/licenses/gpl-3.0.txt)
 
 ## Disclaimer
 
-This tool is intended for research and development purposes. It is **not a medical device** and should not be used for clinical diagnosis. The metrics calculated provide an indication of EEG signal quality based on the specified configuration and should be interpreted within the context of the specific experimental setup, data quality, and analysis goals. The sample data demonstration provides a baseline understanding but may not reflect performance on all types of EEG recordings or electrode configurations.
+This tool is for research and development purposes only. It is **not a medical device** and is not intended for clinical diagnosis. The calculated metrics offer insights into signal quality but must be interpreted considering the specific recording context, data quality, and chosen configuration. The demonstration using sample data serves as a functional example and may not directly reflect performance with all EEG hardware or experimental conditions.
